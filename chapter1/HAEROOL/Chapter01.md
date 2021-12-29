@@ -1,3 +1,7 @@
+layout: post
+date: 2021-12-29 17:00
+background: 
+tag: [Tips, Github io, Notion]
 # 1주차 - 데이터 타입
 
 # 목차
