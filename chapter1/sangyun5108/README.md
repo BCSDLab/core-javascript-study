@@ -363,4 +363,369 @@ obj2 = {c:20,d:30};
 - 기본형 데이터 @1001의 값도 달라지고, 참조형 데이터 @1003의 값도 달라졌다.
 - 결론 : 참조형 데이터가 '가변값'이라고 설명할 때의 '가변'은 **참조형 내부의 프로퍼티**를 변경할 때만 성립한다.
 
+##05. 불변 객체
+
+### 불변 객체를 만드는 간단한 방법
+
+- 참조형 데이터의 가변? 데이터 자체가 아닌 내부 프로퍼티를 변경할 때만 성립
+- **기존 데이터는 변하지 않는다.**
+
+불변 객체가 필요한 상황 : 값으로 전달받은 객체에 변경을 가하더라도 원본 객체는 변하지 않아야 하는 경우
+
+가변성으로 인한 문제점 예시
+```javascript
+const user = {
+  name:'sangyun',
+  gender:'male'
+};
+
+const changeName = (user,name) => {
+  let newUser = user;
+  newUser.name = name;
+  return newUser;
+}
+
+let user2 = changeName(nuser,'daeyoung');
+
+console.log(user.naem,user2.name);
+console.log(user === user2);
+```
+출력값
+
+```javascript
+daeyoung daeyoung
+
+true
+```
+
+- user의 이름은 sangyun으로, user1의 이름은 daeyoung으로 갖도록 하고 싶은데, 참조형 참조 방식 특성 상 같은 주소를 갖기 때문에 데이터가 변경되면, 같이 변경되는 문제점이 발생한다.
+
+
+**해결방법1**
+
+```javascript
+const changeName = (user,name) => {
+  let newUser = {
+    name,
+    gender:'male'
+  }
+  return newUser
+}
+```
+
+changeName 함수내에서 새로운 객체를 반환해주면
+
+출력값
+
+```javascript
+sangyun daeyoung
+
+false
+```
+
+- 참조로 인한 첫 예제에서 등장했던 문제가 해결된다
+- user와 user2는 완전히 서로 다른 객체이다.
+
+
+**해결방법2**
+
+해결방법1은 대상 객체에 대한 정보가 많을수록, 변경해야 할 정보가 많을수록 일일히 다 입력을 해주어야 한다.
+
+```javascript
+const copyObject = (object) => {
+
+  const newObject = {};
+ 
+  for(let prop in object){
+    newObject[prop] = object[prop];
+  }
+  
+  return newObject;
+}
+```
+- for ~ in 을 사용해서 객체의 프로퍼티들을 복사해준다.
+
+
+협업을 하는 모든 개발자들이 user 객체 내부의 변경이 필요할 때는 무조건 copyObject 함수를 사용하기로 합의하고 그 규칙을 지킨다는 전제하에서는 user객체가 곧 **불변 객체** 라고 볼 수 있다. 하지만 모두가 이 규칙을 지키라는 인간의 신뢰에만 의존하는 것은 불가능하기 때문에, immutable.js, baobab.js등의 라이브러리를 통해 시스템적으로 제약을 거는 편이 더 안전하다.
+
+### 얕은 복사와 깊은 복사
+
+- 얕은 복사 : 바로 아래 단계의 값만 복사하는 방법
+- 깊은 복사 : 내부의 모든 값들을 하나하나 찾아서 전부 복사하는 방법
+
+
+copyObject함수의 얕은 복사 
+
+**중첩된 객체**에서 참조형 데이터가 저장된 프로퍼티를 복사할 때 그 주솟값만 복사한다.
+
+```javascript
+const copyObject = (object) => {
+
+  const newObject = {};
+ 
+  for(let prop in object){
+    newObject[prop] = object[prop];
+  }
+  
+  return newObject;
+}
+
+const user = {
+  name:'Sangyun',
+  urls:{
+    portfolio:'http://github.com/abc,
+    blog:'http://blog.com,
+    facebook:'http://facebook.com/abc
+  }
+};
+
+user2 = copyObject(user);
+
+user2.name = 'Jung';
+user.urls.portfolio = 'http://portfolio.com;
+user2.urls.blog = '';
+
+console.log(user.name === user2.name);
+console.log(user.urls.portfolio === user2.urls.portfolio);
+console.log (user.urls.blog === user2.urls.blog);
+```
+출력값
+```javascript
+false
+
+true
+
+true
+```
+
+- user2의 name 프로퍼티를 바꿔도 user의 name 프로퍼티는 변하지 않는다.
+- user.urls.portfolio, user2.urls.blog의 값은 원본과 사본 중 어느 쪽을 바꾸더라도 다른 한쪽의 값도 함께 바뀐다.
+
+결론 : user 객체에 직접 속한 프로퍼티(name)에 대해서는 복사해서 완전히 새로운 데이터가 만들어진 반면에, 한 단계 더 들어간 urls의 내부 프로퍼티들은 **기존 데이터를 그대로 참조**하고 있다.
+
+
+어떻게 할 수 있을까?
+
+- user.urls 프로퍼티에 대해서도 불변 객체를 만들 필요가 있다.
+
+**해결방법 1**
+```javascript
+
+ user2.urls = copyObject(user.urls);
+ user.urls.portfolio = "http://githug.com/def";
+ user.urls.blog = "http://blog1.com";
+ 
+ console.log(user2.urls.portfolio === user.urls.portfolio);
+ console.log(user2.urls.blog === user.urls.blog);
+
+```
+
+출력값
+```javascript
+false
+
+false
+```
+
+- user의 내부 프로퍼티인 urls도 copyObject를 이용해서 객체를 복사해준다 : 깊은복사
+- 깊은 복사를 해주면 data 영역의 주솟값이 서로 다른 것을 참조하게 된다.
+
+
+**해결방법 2**
+
+깊은 복사 함수 정의
+
+```javascript
+const copyObjectDeep = function(target){
+  const result = {};
+  
+  if(typeof target === 'object' && target!=null){
+    for(let prop in target){
+      result[prop] = copyObject(target[prop]);
+    }
+  }else {
+    result = target;
+  }
+  return result;
+}
+
+```
+
+- target의 타입이 object이거나 target이 null이 아닌경우 반복문을 통해 target의 내부 프로퍼티를 깊은 복사를 해준다.
+
+
+**해결방법 3**
+
+객체를 JSON문법으로 표현된 문자열로 전환했다가 다시 JSON객체로 바꾸는 것
+```javascript
+  const copyObjectViaJSON = function(target){
+    return JSON.parse(JSON.stringify(target));
+  };
+```
+
+
+단, 객체 내부에 또 객체가 있는 경우
+```javascript
+  const obj3 = {
+    a:{
+      b:{
+        c:12
+      }
+    }
+  }
+obj4 = copyObjectDeep(obj3);
+
+obj4.a.b.c = 11;
+
+console.log(obj3);
+console.log(obj4);
+```
+출력값
+
+```javascript
+{ a: { b: { c :11 } } }
+{ a: { b: { c :11 } } }
+```
+
+- 원본과 복사본의 값이 같이 변경된다.
+
+```javascript
+  const obj3 = {
+    a:{
+      b:{
+        c:12
+      }
+    }
+  }
+obj4 = copyObjectViaJSON(obj3);
+
+obj4.a.b.c = 11;
+
+console.log(obj3);
+console.log(obj4);
+```
+출력값
+
+```javascript
+{ a: { b: { c :12 } } }
+{ a: { b: { c :11 } } }
+```
+
+- JSON.parse를 통해 변경하면 원본과 복사본이 다르게 나온다.
+
+## 06. undefined와 null
+
+자바스크립트에서 '없음'을 나타내는 값 undefined와 null이 존재한다.
+
+undefined
+
+- undefined는 사용자가 명시적으로 지정할 수도 있지만, 값이 존재하지 않을 때 **자바스크립트 엔진이 자동으로 부여**하는 경우도 있다.
+- 자바스크립트 엔진은 사용자가 응당 어떤 값을 지정할 것이라고 예상되는 상황임에도 실제로 그렇게 하지 않았을 때 **undefined를 반환** 한다.
+
+
+3가지 경우가 존재
+
+- 값을 대입하지 않은 변수, 즉 데이터 영역의 메모리 주소를 지정하지 않은 식별자에 접근할 때
+- 객체 내부의 존재하지 않는 프로퍼티에 접근하려고 할 때
+- return 문이 없거나 호출되지 않는 함수의 실행 결과
+
+```javascript
+  //1번
+  let a;
+  console.log(a);
+  //2번
+  const obj = {};
+  console.log(obj.a);
+  //3번
+  function hello(){};
+  console.log(hello());
+```
+출력값
+
+```javascript
+undefined
+
+undefined
+
+undefined
+
+```
+
+**Undefined와 배열**
+```javascript
+  const arr1 = [];
+  arr1.length = 3;
+  console.log(arr1);
+  
+  const arr2 = newArray(3);
+  console.log(arr2);
+  
+  const arr3 = [undefined,undefined,undefined];
+  console.log(arr3);
+```
+출력값
+
+```javascript
+[<3 empty items>]
+[<3 empty items>]
+[undefined,undefined,undefined]
+```
+
+- '비어있는 요소'와 'undefined를 할당한 요소'는 출력 결과부터 다르다.
+- '비어있는 요소'는 순회와 관련된 많은 배열 메서드들의 순회 대상에서 제외된다.
+
+**빈 요소와 배열의 순회**
+```javascript
+  const arr1 = [undefined,1];
+  const arr2 = [];
+  arr2[1] = 1;
+  
+  console.log("arr1");
+  arr1.forEach((index,value)=>{
+    console.log(index,value);
+  });
+  
+  console.log("arr2");
+  arr1.forEach((index,value)=>{
+    console.log(index,value);
+  });
+```
+출력값
+
+```javascript
+arr1
+
+undefined 0
+
+1 1
+
+arr2
+
+1 1
+```
+
+- 사용자가 직접 undefined를 할당한 arr1에 대해서는 일반적으로 알고 있는 대로 배열의 모든 요소를 순회해서 결과를 출력한다.
+- arr2에 대한 결과에선, 각 메서드들이 비어있는 요소에 대해서는 어떠한 처리도 하지 않고 건너뛰었다.
+
+결론 : '배열도 객체이다.'
+
+**undefined의 의미 차이***
+- 사용자가 명시적으로 부여한 경우와 비어있는 요소에 접근하려 할 때 반환되는 두 경우 'unefined'의 의미를 구분한다.
+- 전자의 undefined는 '비어있음'을 의미하지만, **하나의 값으로 동작하기 때문에 이때의 프로퍼티나 배열의 요소는 고유의 키값(프로퍼티 이름)이 실존하게 되고**, 순회의 대상이 될 수 있다.
+- 후자의 undefined는 해당 프로퍼티 내지 배열의 키값(인덱스)**자체가 존재하지 않음을 의미**한다.
+
+
+결론
+
+'비어있음'을 명시적으로 나타내고 싶을 땐, undefined가 아닌 null을 사용하면 된다.
+이런 규칙을 따르는 한 undefined는 오직 '**값을 대입하지 않은 변수에 접근하고자 할 때 자바스크립트 엔진이 반환해주는 값**'으로서만 존재한다.
+
+주의할 점
+
+- typeof null은 object
+
+```javascript
+  n == undefined  //true
+  n === undefined //false
+```
 
