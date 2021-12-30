@@ -11,3 +11,4 @@
 | 주제     |         crazy-oung          |         daepan          |         HAEROOL          |         jonghopark95          |         sangyun5108          |
 | :------- | :-------------------------: | :---------------------: | :----------------------: | :---------------------------: | :--------------------------: |
 | chapter1 | [🔗](./chapter1/crazy-oung) | [🔗](./chapter1/daepan) | [🔗](./chapter1/HAEROOL) | [🔗](./chapter1/jonghopark95) | [🔗](./chapter1/sangyun5108) |
+| chapter2 | | | | | |
