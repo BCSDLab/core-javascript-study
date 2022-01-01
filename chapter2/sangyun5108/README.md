@@ -204,5 +204,132 @@ console.log(a); //1
 
 - (5),(6) 둘다 'bbb'가 출력됨, 함수 내부의 모든 코드가 실행되었으므로 실행 컨텍스트가 콜 스택에서 제거됨
 
+### 함수 선언문과 함수 표현식
+
+- **함수 선언문** : function 정의부만 존재하고 별도의 할당 명령이 없는 것
+- **함수 표현식** : 정의한 function을 별도의 변수에 할당 하는 것
+- 함수명을 정의한 함수 표현식 : '기명 함수 표현식'
+- 함수명을 정의하지 않은 표현식 : '익명 함수 표현식'
+
+**함수 표현 3가지 방식**
+```javascript
+  function a(){}
+  a(); //실행
   
+  var b = function(){}
+  b(); //실행
   
+  var c = function d(){}
+  
+  c(); // 실행
+  d(); // 에러
+```
+
+**참고**
+
+- 외부에서는 함수명으로 함수를 호출할 수 없다.
+- 함수명은 오직 함수 내부에서만 접근할 수 있다.
+
+**원본 코드**
+```javascript
+  console.log(sum(1,2));
+  console.log(multiply(3,4));
+  
+  // 함수 선언문
+  function sum (a,b) { 
+    return a+b;
+  }
+  
+  // 함수 표현식
+  var multiply = function(a,b){
+    return a*b;
+  }
+```
+
+
+**호이스팅을 마친 상태**
+
+```javascript
+  var sum = function sum(a,b){
+    return a+b;
+  }; //(1)
+  var multiply; //(2)
+  
+  console.log(sum(1,2)); //(3)
+  console.log(multiply(3,4)); //(4)
+  
+  multiply = function(a,b){
+    return a+b;
+  } //(5)
+  
+```
+
+- (1) : 메모리 공간을 확보하고 확보된 공간의 주솟값을 변수 sum에 연결
+
+- (2) : 메모리 공간을 확보하고 확보된 공간의 주솟값을 변수 multiply에 연결
+
+- (1) : sum 함수를 또 다른 메모리 공간에 저장을 하고, 주솟값을 변수 sum의 공간에 할당
+
+- (3) : sum을 실행하여 3을 출력
+
+- (4) : 'multiply is not a function' 에러 메시지 출력
+
+- (5) : 에러로 인해 실행되지 않은 채로 런타임 종료
+
+**함수 선언문 위험성**
+
+```javascript
+  console.log(sum(3,4));
+  
+  function sum(x,y){
+    return x+y;
+  }
+  
+  var a = sum(1,2);
+  
+  function sum(x,y){
+    reutrn x+'+'+y+'='+(x+y);
+  }
+  
+  var c = sum(1,2);
+  console.log(c);
+```
+
+- A라는 사람이 먼저 sum 함수가 Number값을 return하고자 정의
+
+- B라는 사람이 나중에 sum 함수가 문자열 형식으로 return하고자 정의
+
+- A라는 사람이 sum(3,4);를 console.log로찍을 경우 return값이 Number가 아닌 문자열로 나와서 당황
+
+**함수 표현식 사용**
+
+```javascript
+  console.log(sum(3,4)); //sum is not a function
+  
+  var sum = function(x,y){
+    return x+y;
+  }
+  
+  var a = sum(1,2);
+  
+  var sum = function(x,y){
+    reutrn x+'+'+y+'='+(x+y);
+  }
+  
+  var c = sum(1,2);
+  console.log(c);
+```
+
+- 이렇게 선언해주면, A라는 사람과 B라는 사람이 각각 원하는 결과를 얻을 수 있다.
+
+결론 : 상대적으로 함수 표현식이 더 안전하다.
+
+
+### 스코프,스코프 체인, outerEnvironmentReference
+
+- 스코프 : 식별자에 대한 유효범위
+
+- 스코프 체인 : 식별자의 유효범위를 안에서부터 바깥으로 차례로 검색해나가는 것
+
+- outerEnvironmentReference : LexicalEnvironment의 두번째 수집자료, 스코프 체인을 가능하게 해준다.
+
