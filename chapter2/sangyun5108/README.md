@@ -333,3 +333,76 @@ console.log(a); //1
 
 - outerEnvironmentReference : LexicalEnvironment의 두번째 수집자료, 스코프 체인을 가능하게 해준다.
 
+
+### 스코프 체인
+
+- outerEnvironmentReference는 현재 호출된 함수가 **선언될 당시**의 LexicalEnvironment를 참조한다.
+
+- '선언하다' : 콜 스택 상에서 어떤 실행 컨텍스트가 활성화된 상태
+
+ex) A함수 내부에 B함수 선언, B함수 내부에 C함수 선언한 경우
+
+- 함수 C의 outerEnvironmentReference는 함수 B의 LexicalEnvironment를 참조한다.
+- 함수 B의 LexicalEnvironment에 있는 outerEnvironmentReference는 함수 B가 선언되던 때 A의 LexicalEnvironment를 참조한다.
+- 선언 시점의 LexicalEnvironment를 계속 찾아 올라가면 마지막엔 전역 컨텍스트의 LexicalEnvironment가 있다.
+- 각 outerEnvironmentReference는 오직 자신이 선언된 시점의 LexicalEnvironment만 참조하고 있어서, 가장 가까운 요소부터 차례대로 접근 가능하다.
+- 구조 특정상 동일한 식별자를 선언한 경우, 스코프 체인 상태에서 **가장 먼저 발견된 식별자에게만 접근이 가능**하다.
+
+
+```javascript
+  var a = 1; // 1번
+  var outer = function(){ // 2번
+    var inner = function(){ //3번
+      console.log(a); //4번
+      var a = 3; //5번
+    }; //6번
+    inner(); //7번
+    console.log(a); //8번
+  }; //9번
+  
+  outer(); //10번
+  console.log(a); //11번
+```
+
+**실행 순서**
+
+- 전역 컨텍스트 활성화, 전역 컨텍스트의 environmentRecord에 {a,outer} 식별자 저장, 전역 컨텍스트는 선언 시점이 존재하지 않기 때문에, 전역 컨텍스트의 outerEnvironment-Reference에는 아무것도 담기지 않는다(this:전역객체)
+
+-  1번,2번 줄 : 전역 스코프에 존재하는 변수 a에 1, outer에 함수 할당
+
+-  10번 줄 : outer함수 호출(전역 컨텍스트 코드 중단 + outer 실행 컨텍스트 활성화)
+
+-  2번 줄 : outer 실행 컨텍스트의 environmentRecord : {inner} 식별자 저장, outerEnvironmentRecord : 전역 컨텍스트의 LexicalEnvironment
+
+-  3번 줄 : outer 스코프에 있는 변수 inner에 함수 할당
+
+-  7번 줄 : inner 함수를 호출한다. outer 실행 컨텍스트는 잠시 중단되고, inner 실행 컨텍스트가 활성화 되어 3번줄로 이동
+
+-  3번 줄 : inner 실행 컨텍스트의 environmentRecord : {a} 식별자 저장, outerEnvironmentRecord : outer 컨텍스트의 LexicalEnvironment 
+
+-  4번 줄 : 식별자 a 에 접근 -> inner 컨텍스트의 environmentRecord에 a 검색 -> 아직 할당된 값 없어서 undefined 출력
+
+-  5번 줄 : inner 스코프 변수 a에 3 할당
+
+-  6번 줄 : inner 함수 실행이 종료된다. inner 실행 컨텍스트가 콜 스택에서 제거되고, 바로 아래의 outer 실행 컨텍스트가 다시 활성화 되어, 아까 중단했던 7번째 줄 다음으로 이동
+
+-  8번 줄 : 식별자 a에 접근 -> 전역 LexicalEnvironment의 a에 저장된 값 1을 반환한다.(찾는 방법 : 활성화된 실행 컨텍스트의 LexicalEnvironment에 접근 -> environmentRecord에 a가 있는지 찾음 -> 없는 경우 outerEnvironmentReference에 있는 environmentRecord로 넘어감)
+
+- 9번 줄 : outer 함수 실행이 종료된다. outer 실행 컨텍스트가 콜 스택에서 제거되고, 바로 아래의 전역 컨텍스트가 활성화 되면서, 아까 중단했던 10번줄의 다음으로 이동
+
+- 11번 줄 : 식별자 a에 접근 -> 현재 활성화 상태인 전역 컨텍스트의 envrionmentRecord에서 a를 검색후 1출력, 모든 코드의 실행 완료되어, 전역 컨텍스트가 콜 스택에서 제거되고 종료
+
+
+**정리**
+
+- 전역 공간 : 전역 스코프에서만 생성도니 변수에만 접근 가능
+- outer 함수 내부 : outer 및 전역 스코프에서 생성된 변수에 접근 가능
+- inner 함수 내부 : inner,outer,전역 스코프 모두에 접근 가능
+
+**변수 은닉화**
+
+- 식별자 a는 전역 공간에서도 선언하고, inner 함수 내부에서도 선언함
+- inner 함수 내부에서 a에 접근하려면 무조건 스코프 체인 상의 첫 번째 인자인 inner 스코프의 LexicalEnvironment부터 검색
+- LexicalEnvironment에 a 식별자가 존재하므로, 즉시 a 반환
+
+결론 : inner 함수 내부에서 a 변수를 선언했으므로, 전역 공간에 선언한 동일한 이름의 a 변수에는 접근할 수 없다.
