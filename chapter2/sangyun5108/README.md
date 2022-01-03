@@ -406,3 +406,46 @@ ex) A함수 내부에 B함수 선언, B함수 내부에 C함수 선언한 경우
 - LexicalEnvironment에 a 식별자가 존재하므로, 즉시 a 반환
 
 결론 : inner 함수 내부에서 a 변수를 선언했으므로, 전역 공간에 선언한 동일한 이름의 a 변수에는 접근할 수 없다.
+
+### 전역변수와 지역변수
+
+- 전역변수 : 전역 공간에서 선언한 변수
+- 지역변수 : 함수 내부에서 선언한 변수
+
+
+## 04. this
+
+- 실행 컨텍스트의 thisBinding에는 this로 지정된 객체가 저장된다.
+- 실행 컨텍스트 활성화 당시에 this가 지정되지 않는 경우 this에는 전역 객체가 저장된다.
+
+## 05. 정리
+
+- 실행 컨텍스트 : 실행할  코드에 제공할 환경 정보들을 모아놓은 객체
+
+- 종류 : 전역 컨텍스트, eval, 함수 실행에 의한 컨텍스트
+
+- 실행 컨텍스트 객체가 활성화되는 시점에 VariableEnvironment,LexicalEnvironment,ThisBinding 세가지 정보를 수집한다.
+
+- 실행 컨텍스트를 생성할 때, VariableEnvironment와 LexicalEnvironment가 동일한 내용으로 구성된다.
+
+- LexicalEnvironment는 함수 실행 도중에 변경되는 사항이 즉시 반영된다.
+
+- VariableEnvironment는 초기 상태를 유지한다.
+
+- V,L은 environmentRecord(매개변수명, 변수의 식별자, 선언한 함수의 함수명 등 수집), outerEnvironmentReference(직전 컨텍스트의 LexicalEnvironment 정보를 참조)
+
+- 호이스팅 : 실행 컨텍스트가 관여하는 코드 집단의 최상단으로 이들을 끌어올리는것이다.
+
+- 변수 선언과 값 할당이 동시에 이뤄진 문장은 '선언부'만 호이스팅한다.
+
+- 할당 과정은 원래 자리에 남아있는다.
+
+- 스코프 : 변수의 유효범위
+
+- 전역 변수 : 전역 context의 LexicalEnvironment에 담긴 변수
+
+- 지역 변수 : 그 밖의 함수에 의해 생성된 실행 컨텍스트의 변수
+
+- 전역변수의 사용은 최소화 해라
+
+- this에는 실행 컨텍스트가 활성화하는 당시에 지정된 this가 저장된다.
