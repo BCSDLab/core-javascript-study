@@ -45,11 +45,11 @@
 
 > - 실행 컨텍스트에 대한 이해
 > - 실행 컨텍스트가 수집하는 세가지 정보 variableEnvironment, LexicalEnvironment, ThisBinding
-> - 실행컨텍스트와 호이스팅의 개념
+> - 실행 컨텍스트와 호이스팅의 개념
 
 ## 2-1 실행 컨텍스트란?
 
-- 실행 컨텐스트<sup>execution context</sup>
+- 실행 컨텍스트<sup>execution context</sup>
 - 실행할 **코드에 제공할 환경 정보를 모아놓은 객체**
 - 자바스크립트의 동적 언어로 성격을 가장 잘 파악할 수 있는 개념
 
@@ -138,7 +138,9 @@ consol.log(a); // 1
 - 스택구조에서 실행 컨텍스트가 콜 스택의 맨 위에 쌓이는 순간 = 현재 실행할 코드에 관여하게 되는 시점
   - 기존 컨텍스트가 아래에 위치하기 때문
 - JS 엔진이 활용할 목적으로 코드 실행에 필요한 환경정보를 수집해서 실행 컨텍스트에 저장
+
   ![](image/inners-env.png)
+
   - VariableEnvironment: 현재 컨텍스트 내의 식별자들에 대한 정보 + 외부 환경 정보, 선언 시점의 LexcialEnvironment의 스냅샷 (변경사항 반영안됨)
   - LexicalEnvironment: 초기에는 VariableEnvironment와 같지만 변경 사항이 실시간으로 반영
   - ThisBinding: this 식별자가 바라봐야 할 대상 객체
