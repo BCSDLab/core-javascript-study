@@ -378,7 +378,7 @@ ex) A함수 내부에 B함수 선언, B함수 내부에 C함수 선언한 경우
 
 -  7번 줄 : inner 함수를 호출한다. outer 실행 컨텍스트는 잠시 중단되고, inner 실행 컨텍스트가 활성화 되어 3번줄로 이동
 
--  3번 줄 : inner 실행 컨텍스트의 environmentRecord : {a} 식별자 저장, outerEnvironmentRecord : outer 컨텍스트의 LexicalEnvironment 
+-  3번 줄 : inner 실행 컨텍스트의 environmentRecord : {a} 식별자 저장, outerEnvironmentReference : outer 컨텍스트의 LexicalEnvironment 
 
 -  4번 줄 : 식별자 a 에 접근 -> inner 컨텍스트의 environmentRecord에 a 검색 -> 아직 할당된 값 없어서 undefined 출력
 
@@ -395,7 +395,7 @@ ex) A함수 내부에 B함수 선언, B함수 내부에 C함수 선언한 경우
 
 **정리**
 
-- 전역 공간 : 전역 스코프에서만 생성도니 변수에만 접근 가능
+- 전역 공간 : 전역 스코프에서만 생성 변수에만 접근 가능
 - outer 함수 내부 : outer 및 전역 스코프에서 생성된 변수에 접근 가능
 - inner 함수 내부 : inner,outer,전역 스코프 모두에 접근 가능
 
