@@ -126,19 +126,135 @@
 - 함수 앞에 점(.)이 있는지 여부만으로 간단하게 구분이 가능하다.
 
 
+```javascript
+  var obj = {
+    method : function (x) {console.log(this,x);}
+  };
+  
+  obj.method(1);  // {method:f} 1
+  obj['method'](2); // {method:f} 2
+```
+- 점 표기법, 대괄호 표기법에 상관없이 함수 이름 앞에 객체가 명시돼어있는 경우엔 메서드 호출, 그렇지 않은 모든 경우엔 함수 호출
+
+### 메서드 내부에서의 this
+
+```javascript
+  var obj = {
+    methodA : function(){console.log(this);}
+    inner:{
+      methodB : function(){console.log(this);}
+    }
+  };
+  
+  obj.methodA(); // {methodA : f, inner:{...}} (===obj)
+  obj['methodA'](); // {methodA : f, inner:{...}} (===obj)
+  
+  obj.inner.methodB(); // {methodB : f} (===obj.inner)
+  obj.inner['methodB'](); // {methodB : f} (===obj.inner)
+  obj['inner'].methodB(); // {methodB : f} (===obj.inner)
+  obj['inner']['methodB'](); // {methodB : f} (===obj.inner)
+```
+
+### 함수로서 호출할 때 그 함수 내부에서의 this
+
+**함수 내부에서의 this**
+
+- this에는 호출한 주체에 대한 정보가 담긴다.
+- 함수를 함수로써 호출한경우, 호출 주체를 명시하지 않고, 개발자가 코드에 직접 관여해서 실행한 것이기 때문에 호출 정보를 알 수 없다.
+- this가 지정되지 않은 경우에는 this는 전역 객체를 바라본다.
+- 함수에서의 this는 전역 객체를 가리킨다.
+- 더글라스 크락포드는 이를 명백한 설계상의 오류라고 지적한다.
+
+**메서드 내부함수에서의 this**
+
+- 함수로써 호출했는지, 메서드로서 호출했는지 파악하면 this의 값을 정확히 맞출 수 있다.
+
+```javascript
+  var obj1 = {
+    outer : function(){
+      console.log(this); //obj1
+      var innerFunc = function(){
+        console.log(this);
+      }
+      innerFunc(); //전역객체(Window)
+      
+      var obj2 = {
+        innerMethod : innerFunc
+      };
+      
+      obj2.innerMethod(); //obj2
+      
+    }
+  };
+  
+  obj1.outer();
+```
+
+- 객체를 생성, 객체 내부에는 outer라는 프로퍼티가 있고, 익명함수가 연결된다. 생성한 객체를 obj1에 할당
+- obj1.outer 호출
+- obj1.outer의 실행 컨텍스트가 생성되면서 호이스팅 발생, 스코프 체인 정보를 수집하고, this를 바인딩(함수명인 outer앞에 점(.)이 존재하므로, 점 앞의 객체인 obj1이 바인딩)
+- obj1 객체 정보 출력
+- 호이스팅된 변수 innerFunc는 outer 스코프 내에서만 접근이 가능한 지역변수이다. 지역변수에 익명함수를 할당한다.
+- innerFunc 호출
+- innerFunc 실행 컨텍스트가 생성되면서 호이스팅, 스코프 체인 수집, this 바인딩 수행(함수명 앞에 점(.)이 없어 함수로써 호출한 것이기 때문에, this가 전역객체(Window)로 바인딩)
+- Window 객체 정보 호출
+- obj2도 outer 스코프 내에서만 접근할 수 있는 지역변수이고, innerFunc로 정의된 innerMethod라는 프로퍼티를 가진 객체를 할당한다.
+- obj2.innerMethod 호출
+- obj2.innerMethod 함수의 실행 컨텍스트가 생성되고, 함수 호출시 함수명인 innerMethod 앞에 점(.)이 존재하므로 메서드로써 호출한것이다. 따라서 this에는 obj2가 바인딩된다.
+- obj2 객체 정보가 출력된다.
+
+정리 : this 바인딩에 관해서는 함수를 실행하는 당시의 주변 환경(메서드 내부, 함수 내부)은 중요하지 않고, **해당 함수를 호출하는 구문 앞에 점 또는 대괄호 표기가 있는지 없는지**가 관건이다.
+
+### 메서드의 내부 함수에서의 this를 우회하는 방법
+
+- 호출 주체가 없는 경우, 자동으로 전역객체를 바인딩하는 것이 아닌, 호출 당시 주변 환경의 this를 그대로 상속받고 싶다!
+- 변수를 검색하면 우선 가장 가까운 스코프의 L.E를 찾고, 없으면 상위 스코프를 탐색하듯이
+- 현재 컨텍스트에 바인딩된 대상이 없으면 직전 컨텍스트의 this를 바라보도록!
 
 
+**변수 활용**
 
+```javascript
+  var obj = {
+    outer : function(){
+      console.log(this); // {outer : f}
+      var innerFunc1 = function(){
+        console.log(this); // Window {}
+      };
+      innerFunc1();
+      
+      **var self = this;**
+      var innerFunc2 = function(){
+        console.log(self); // {outer : f}
+      }
+      
+      innerFunc2();
+    }
+  };
+  
+  obj1.outer();
+```
 
+- innerFunc1 내부에서 this : 전역객체
+- outer 스코프에서 self라는 변수에 this를 정한 상태해서 호출한 innerFunc2의 경우 self에는 객체 obj2가 출력
 
+### this를 바인딩하지 않는 함수
 
+- ES6에서는 this가 전역객체를 바라보는 문제를 보완 -> this를 바인딩하지 않는 **화살표 함수**를 도입
+- 화살표 함수는 실행 컨텍스트를 생성시, this 바인딩 과정 자체가 빠지게되어, **상위 스코프의 this**를 그대로 활용한다.
 
+```javascript
+  var obj = {
+    outer : function(){
+      console.log(this); // {outer : f}
+      var innerFunc = () => {
+        console.log(this); // {outer : f}
+      };
+      innerFunc();
+    }
+  };
+  
+  obj.outerFunc();
+```
 
-
-
-
-
-
-
-
-
+- call, apply 메서드를 활용해서 함수를 호출할 때 명시적으로 this를 지정하는 방법이 존재한다.
