@@ -397,13 +397,168 @@
 - A번째 줄은 배열 메서드인 push를 객체 obj에 적용해 프로퍼티 3에 'd'를 추가했다.
 - B번째 줄은 slice 메서드를 적용해 객체를 배열로 전환했다. -> 매개변수를 아무것도 넘기지 않으면, 원본 배열의 얕은 복사본을 반환한다.
 
+**유사배열 객체 arguments, NodeList**
+
+```javascript
+  function a(){
+    var argv = Array.prototype.slice.call(arguments);
+    argv.forEach(function(tag){
+      console.log(arg);
+    });
+  }
+  
+  a(1,2,3);
+  
+  document.body.innerHTML = '<div>a</div><div>b</div><div>c</div>';
+  
+  var nodeList = document.querySelectorAll('div');
+  var nodeArr = Array.prototype.slice.call(nodeList);
+  nodeArr.forEach(function(node){
+    console.log(node);
+  });
+```
+
+- 유사배열 객체에는 call/apply 메서드를 이용해서 모든 배열 메서드를 적용할 수 있다.
+- 인덱스와, length 프로퍼티를 지니는 **문자열**에대해서도 적용이 가능하다.
+- 문자열인경우 length프로퍼티가 읽기 전용이므로 원본 문자열 변경을 하는 메서드(push,pop,shift,unshift,splice)에는 에러가 발생한다.
+- concat과 같이 대상이 반드시 배열인 경우에는 에러가 발생하지는 않지만, 제대로 된 결과를 얻을 수 없다.
+
+```javascript
+  var str = 'abc def';
+  
+  Array.prototype.push.call(str,',pushed string');
+  // Error : Cannot assign to read only property 'length' of object[object String]
+  
+  Array.prototype.concat.call(str,'string'); 
+  //[String {"abc def"},"string"]
+  
+  Array.prototype.every.call(str,function(char){ return char !== ' ';});
+  // false
+  
+  var newArray = Array.prototype.map.call(str,function(char){return char + '!'});
+  
+  console.log(newArr); //['a!','b!','c!','d!','e!','f!']
+  
+  var newStr = Array.prototype.reduce.apply(str,[
+    function(string,char,i){
+      return string + char + i;
+    },
+    ''
+  ]);
+  
+  console.log(newStr); // "a0b1c2 3d4e5f6"
+```
+- slice 메서드는 오직 배열 형태로 '복사'하기 위해 차용된것이다.
+- 경험해 보지 않은 사람은 이 코드를 보면 어떤 의도인지 파악하기 어렵다.
+- ES6에서는 유사배열 객체 또는 순회가능한 모든 종류의 데이터 타입을 배열로 전환하는 **Array.from** 메서드를 새로 도입했다.
+
+```javascript
+  var obj = {
+    0:'a',
+    1:'b',
+    2:'c',
+    length:3
+  };
+  
+  var arr = Array.from(obj);
+  console.log(arr); //['a','b','c']
+```
+
+**생성자 내부에서 다른 생성자 호출**
+
+- 생성자 내부에 다른 생성자의 공통된 내용이 있을 경우 call 또는 apply를 이용해 다른 생성자를 호출하면 간단하게 반복을 줄인다.
+
+```javascript
+  function Person(name,gender){
+    this.name = name;
+    this.gender = gender;
+  }
+  
+  function Studen(name,gender,school){
+    Person.call(this,name,gender); //다른 생성자 호출
+    this.school = school;
+  }
+  
+  function Employee(name,gender,company){
+    Person.apply(this,[name,gender]); // 다른 생성자 호출
+    this.company = company;
+  }
+  
+  var by = new Student('보영','female','단국대');
+  var jn = new Employee('재난','male','구골');
+  
+  
+```
+
+**여러 인수를 묶어 하나의 배열로 전달하고 싶을 때 - apply활용**
+
+```javascript
+  var numbers = [10,20,3,16,45];
+  var max = min = numbers[0];
+  numbers.forEach(function(number){
+    if(number>max){
+      max = number;
+    }
+    if(number<min){
+      min = number;
+    }
+  });
+  
+  console.log(max,min) // 45 3
+```
 
 
+```javascript
+  var numbers = [10,20,3,16,45];
+  var max = Math.max.apply(null,numbers);
+  var min = Math.min.apply(null,numbers);
+  console.log(max,min); //45 3
+```
+
+```javascript
+  const numbers = [10,20,3,16,45];
+  const max = Math.max(...numbers);
+  const min = Math.min(...numbers);
+  
+  console.log(max,min);
+```
+- spread operator 이용
 
 
+### bind메서드 ###
 
+- call과 비슷하지만, 즉시 호출하지 않고 넘겨 받은 this 및 인수들을 바탕으로 새로운 함수를 반환하기만 하는 메서드이다.
+- 함수에 this를 **미리 적용**하는 것과 **부분 적용 함수**를 구현하는 두가지 목적을 가진다.
 
+```javascript
+  var func = function(a,b,c,d){
+    console.log(this,a,b,c,d);
+  };
+  func(1,2,3,4);
+  
+  var bindFunc1 = func.bind({x:1});
+  bindFunc1(5,6,7,8); // {x:1} 5 6 7 8
+  
+  var bindFunc2 = func.bind({x:1},4,5);
+  bindFunc2(6,7); //{x:1} 4 5 6 7
+  bindFunc2(8,9); //{x:1} 4 5 8 9
+```
+- bindFunc1 변수에서 func에 this를 {x:1}로 지정한 새로운 함수 생성 -> this만을 지정하기 위한 bind
+- bindFunc2 -> this지정, 부분 적용 함수 구현을 위한 bind
 
+***name 프로퍼티***
+
+bind 메서드의 독특한 성질 : name 프로퍼티에 bind의 수동태인 'bound'라는 접두사가 붙는다.
+
+```javascript
+  var func = function(a,b,c,d){
+    console.log(this,a,b,c,d);
+  };
+  
+  var bindFunc = func.bind({x:1},4,5);
+  console.log(func.name); // fun c
+  console.log(bindFunc.name); // bound func
+```
 
 
 
