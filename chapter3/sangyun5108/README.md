@@ -546,7 +546,7 @@
 - bindFunc1 변수에서 func에 this를 {x:1}로 지정한 새로운 함수 생성 -> this만을 지정하기 위한 bind
 - bindFunc2 -> this지정, 부분 적용 함수 구현을 위한 bind
 
-***name 프로퍼티***
+**name 프로퍼티**
 
 bind 메서드의 독특한 성질 : name 프로퍼티에 bind의 수동태인 'bound'라는 접두사가 붙는다.
 
@@ -559,12 +559,129 @@ bind 메서드의 독특한 성질 : name 프로퍼티에 bind의 수동태인 '
   console.log(func.name); // fun c
   console.log(bindFunc.name); // bound func
 ```
+**상위 컨텍스트의 this를 내부함수나 콜백 함수에 전달하기**
+
+**call**
+```javascript
+  var obj = {
+    outer : function(){
+      console.log(this);
+      var innerFunc = function(){
+        console.log(this);
+      };
+      
+      innerFunc.call(this);
+    }
+  };
+  
+  obj.outer();
+```
+**bind**
+```javascript
+  var obj = {
+    outer : function(){
+      console.log(this);
+      var innerFunc = function(){
+        console.log(this);
+      }.bind(this);
+      innerFunc();
+    }
+  }
+```
+- bind 메서드를 이용해서 this값을 사용자의 입맞에 맞게 변경이 가능하다.
+
+**bind-내부함수 전달**
+```javascript
+  var obj = {
+    logThis : function(){
+      console.log(this);
+    },
+    logThisLater1 : function(){
+      setTimeout(this.logThis,500);
+    },
+    logThisLater2 : function(){
+      setTimeout(this,logThis.bind(this),1000);
+    }
+  };
+  
+  obj.logThisLater1();  // window{...}
+  obj.logThisLater2(); // obj {logThis:f,...}
+```
+
+### 화살표 함수의 예외사항
+
+- 화살표 함수는 실행 컨텍스트 생성 시 this를 바인딩하는 과정이 제외되었다.
+- 함수 내부의 this가 아예 존재하지 않으며, 접근하려 하면 스코프체인상 가장 가까운 this에 접근하게된다.
+
+```javascript
+  var obj = {
+    outer : function(){
+      console.log(this);
+      var innerFunc = () => {
+        console.log(this);
+      };
+      innerFunc();
+    }
+  };
+  
+  obj.outer();
+```
+- 내부 함수를 화살표 함수로 변경 -> 별도의 변수로 this를 우회하거나 call/apply/bind를 적용할 필요가 없다.
+
+### 별도의 인자로 this를 받는 경우(콜백 함수 내에서의 this)
+
+```javascript
+  var report = {
+    sum : 0,
+    count : 0,
+    add : function(){
+      var args = Array.prototype.slice.call(arguments); // 배열로 변환
+      args.forEach(function(entry){
+        this.sum += entry;
+        ++this.count;
+      },this);
+    },
+    average:function(){
+      return this.sum / this.count;
+    }
+  };
+  
+  report.add(60,85,95);
+  console.log(report.sum, report.count,report.average()); // 243 3 80
+```
+
+- report 객체 : 프로퍼티 : sum,count / 메서드 : add,average
+- add 메서드 : arguments를 배열로 반환 후, args 변수에 담는다.
+- args.forEach : 배열을 순회하면서 콜백 함수 실행 / 콜백 함수 내부에서의 this는 forEach 함수의 **두 번째 인자로 전달해준 this**가 바인딩 된다.(add메서드의 this:report)
+- average : return 평균값
+
+**thisArg를 인자로 받는 메서드**
+```javascript
+  Array.prototype.forEach(callback[,thisArg])
+  Array.prototype.map(callback[,thisArg])
+  Array.prototype.filter(callback[,thisArg])
+  Array.prototype.some(callback[,thisArg])
+  Array.prototype.evrery(callback[,thisArg])
+  Array.prototype.find(callback[,thisArg])
+  Array.prototype.findIndex(callback[,thisArg])
+  Array.prototype.flatMap(callback[,thisArg])
+  Array.prototype.from(callback[,thisArg])
+  Set.prototype.forEach(callback[,thisArg])
+  Map.prototype.forEach(callback[,thisArg])
+```
+
+## 02. 정리
 
 
+**명시적 this가 없는 경우**
+- 전역공간에서 this는 전역객체(브라우저:window,Node.js:global)를 참조한다.
+- 함수를 메서드로서 호출한 경우 this는 메서드 호출 주체(메서드명의 앞의 객체)를 참조한다.
+- 함수를 함수로서 호출한 경우 this는 전역객체를 참조한다.(**메서드의 내부 함수**에서도 같다.)
+- 콜백 함수 내부의 this는 해당 콟백 함수의 제어권을 넘겨받은 함수가 정의한 것이 되고, 정의하지 않은 경우 전역객체를 참조한다.
+- 생성자 함수에서의 this는 인스턴스를 참조한다.
 
-
-
-
-
-
+**명시적 this가 있는 경우**
+- call,apply 메서드는 this를 명시적으로 지정하면서 함수, 메서드를 호출한다.
+- bind 메서드는 this 및 함수에 넘길 인수를 일부 지정해서 새로운 함수를 만든다.
+- 요소를 순회하며 콜백 함수를 반복 호출하는 내용의 일부 메서드는 별도의 인자로 this를 받는다.
 
