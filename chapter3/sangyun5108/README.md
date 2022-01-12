@@ -280,7 +280,7 @@
 
 - (1) setTimeout : 0.3초뒤에 전역객체 출력 / this를 지정하지 않아서 this가 전역객체가 된다.
 - (2) 전역개체와 배열의 요소가 총 5회 출력 / this를 지정하지 않아서 this가 전역객체가 된다.
-- (3): click 이벤트가 발생할 때마다 지정해놓은 엘리먼트와 클릭이벤트에 관한 정보가 담긴 객체가 출력된다. / addEventListener 메서드는 콜백 함수를 호출할 때 자신의 this를 상속하도록 정의되어있다.(메서드의 점 앞부분이 this가 된다.)
+- (3): click 이벤트가 발생할 때마다 지정해놓은 엘리먼트와 클릭이벤트에 관한 정보가 담긴 객체가 출력된다. / addEventListener 메서드는 콜백 함수를 호출할 때 자신의 this를 상속하도록 정의되어있다.(메서드의 점 앞부분이 this가 된다.), 앞서 지정한 엘리먼트와 클릭 이벤트에 관한 정보가 담긴 객체가 출력된다.
 
 ### 생성자 함수 내부에서의 this
 
@@ -356,7 +356,7 @@
 
 - apply 메서드 : call 메서드와 기능적 동일
 - call 메서드는 첫 번째 인자를 제외한 나머지 모든 인자들을 호출할 함수의 매개변수로 지정
-- apply 메서드는 두 번째 인자를 **배열**로 받아 그 배열의 요소들을 호출함 함수의 매개변수로 지정
+- apply 메서드는 두 번째 인자를 **배열**로 받아 그 배열의 요소들을 호출할 함수의 매개변수로 지정
 
 ```javascript
   var func = function(a,b,c){
@@ -388,7 +388,7 @@
   };
   
   Array.prototype.push.call(obj,'d');  //(A)
-  console.log(obj); //  {0 : 'a', 1 : 'b', 2 : 'c',length : 3};
+  console.log(obj); //  {0 : 'a', 1 : 'b', 2 : 'c', 3 : 'd'length : 3};
   
   var arr = Array.prototype.slice.call(obj); //(B)
   console.log(arr); // ['a','b','c','d']
@@ -402,7 +402,7 @@
 ```javascript
   function a(){
     var argv = Array.prototype.slice.call(arguments);
-    argv.forEach(function(tag){
+    argv.forEach(function(arg){
       console.log(arg);
     });
   }
@@ -474,7 +474,7 @@
     this.gender = gender;
   }
   
-  function Studen(name,gender,school){
+  function Student(name,gender,school){
     Person.call(this,name,gender); //다른 생성자 호출
     this.school = school;
   }
@@ -600,7 +600,7 @@ bind 메서드의 독특한 성질 : name 프로퍼티에 bind의 수동태인 '
       setTimeout(this.logThis,500);
     },
     logThisLater2 : function(){
-      setTimeout(this,logThis.bind(this),1000);
+      setTimeout(this.logThis.bind(this),1000);
     }
   };
   
