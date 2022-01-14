@@ -64,24 +64,126 @@
 - callback 함수 **첫 번째 인자 : 현재값** / **두 번째 인자 : 인덱스** / 세 번째 값 : map 메서드의 대상이 되는 배열 자체
 
 
+### this 
+
+- "콜백 함수도 함수이므로, 기본적으로는 this가 전역객체를 참조하지만, 제어권을 넘겨받을 코드에서 콜백 함수에 별도로 this가 될 대상을 지정한 경우에는 그 대상을 참조하게 된다"
+
+**map메서드 직접 구현**
+
+```javascript
+  Array.prototype.map = function(callback,thisArg){
+    var mappedArr = [];
+    for (var i = 0; i < this.length; i++)}{
+      var mappedValue = callback.call(thisArg||window,this[i],i,this);
+      mappedArr[i] = mappedValue;
+    }
+    return mappedArr;
+  }
+```
+- this : thisArg 값이 있을 경우에는 그 값을, 없을 경우에는 전역객체를 지정하고, 첫 번째 인자에는 메서드의 this가 배열을 가리킬 것이므로, 배열의 i번째 요소 값을, 두 번째 인자에는 i 값을, 세번째 인자에는
+배열 자체를 지정해 호출한다.
+- 위 결과가 mappedValue에 담겨 mappedArr의 1번째 인자에 할당된다.
+- this에 다른 값이 담기는 이유 : 제어권을 넘겨받은 코드에서 call/apply 메서드의 첫번째 인자에 콜백 함수 내부에서의 this가 될 대상을 명시적으로 바인딩하기 때문이다.
 
 
+```javascript
+  setTimeout(function(){console.log(this);},300); // (1) Window{...}
+  
+  [1,2,3,4,5].forEach(function(x){
+    console.log(this);  // (2) Window{...}
+  });
+  
+  document.body.innerHTML += '<button id = "a">클릭</button>';
+  document.body.querySelector('#a')
+    .addEventListener('click',function(e){console.log(this,e);})
+ // (3) <button id="a">클릭</button> MouseEvent { isTrued:true, ...}
+```
+- (1) setTimeout의 내부에서 콜백 함수를 호출할 때 call 메서드의 첫번째 인자에 전역객체를 넘기므로, 콜백 함수 내부에서의 this가 전역객체를 가리킨다.
+- (2) forEach는 별도의 인자로 this를 받는 경우에 해당하지만, 별도의 인자로 this를 넘겨주지 않아서, 전역객체를 가리키게 된다.
+- (3) addEventListener는 내부에서 콜백 함수를 호출할때 call 메서드의 첫 번째 인자에 addEventListener 메서드의 this를 그대로 넘기도록 정의돼 있기 때문에, 콜백 함수 내부에서 this가
+addEventListener를 호출한 주체인 HTML을 가리키게 된다.
+
+# 03. 콜백 함수는 함수다
+
+- 콜백 함수는 함수이다.
+- 콜백 함수로 어떤 객체의 메서드를 전달하더라도 그 메서드는 메서드가 아닌 함수로서 호출된다.
+
+```javascript
+  var obj = {
+    vals : [1,2,3],
+    logValues : function(v,i){
+      console.log(this,v);
+    }
+  }
+  
+  obj.logValues(1,2); // {vals : [1,2,3], logValues:f} 1 2
+  [4,5,6].forEach(obj.logValues);
+  // Window{...} 4 0
+  // Window{...} 5 1
+  // Window{...} 6 2
+```
+
+- obj 객체의 logValues는 메서드로 정의되었다. 메서드의 이름 앞에 점이 있으므로 메서드로서 호출 한것이다.
+- 메서드는 forEach함수의 콜백 함수로서 전달했다. obj를 this로 하는 메서드를 그대로 전달한 것이 아닌, obj.logValues가 가리키는 함수만 전달했다.
+- 메서드로서의 호출할때가 아닌 한 obj와의 직접적인 연관이 없어진다.
+- forEach에 의해 콜백이 함수로서 호출되고, 별도로 this를 지정하는 인자를 지정하지 않았으므로, 함수 내부에서의 this는 **전역객체**를 바라보게 된다.
+
+결론 : 어떠한 함수의 인자에 객체의 메서드를 전달하더라도 메서드가 아닌 함수일 뿐이다.
+
+# 04. 콜백 함수 내부의 this에 다른 값 바인딩하기
+
+- 전통 방식 : this를 다른 변수에 담아 콜백 함수로 활용할 함수에서는 this대신 그 변수를 사용하고, 클로저로 만드는 방식
+
+```javascript
+  var obj1 = {
+    name: 'obj1',
+    func : function(){
+      var self = this;
+      return function(){
+        console.log(self.name);
+      };
+    }
+  };
+  var callback = obj1.func();
+  setTimeout(callback,1000);
+```
+
+- obj1.func 메서드 내부에서 self 변수에 this를 담고, 익명 함수를 선언과 동시에 반환해준다.
+- obj1.func를 호출하면 앞서 선언한 내부함수가 반환되어 callback 변수에 담긴다.
+- callback을 setTimeout 함수에 인자로 전달 하면 1초뒤 callback이 실행되면서, 'obj1'을 출력한다.
+- 너무 번거롭다!
 
 
+**함수 내부에서 this 사용 x**
+```javascript
+  var obj1 = {
+    name:'obj1',
+    func:function(){
+      console.log(obj1.name);
+    }
+  };
+  
+  setTimeout(obj1.func,1000);
+```
+- this를 이용해 다양한 상황에 재활용 할 수 없게 되어버렸다.
 
+**func함수 재활용**
 
+```javascript
+  var obj2 = {
+    name : 'obj2',
+    func : obj1.func
+  };
+  
+  var callback2 = obj2.func();
+  setTimeout(callback2,1500);
+  
+  var obj3 = {name:'obj3'};
+  var callback3 = obj1.func.call(obj3);
+  setTimeout(callback3,2000);
+```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+- callback2는 (obj1의 func를 복사한) obj2의 func를 실행한 결과를 담아 콜백으로 사용했다.
+- callback3는 obj1의 func를 실행하면서 this를 obj3가 되도록 지정해 콜백으로 사용했다.
+- 실행 시점으로 부터 1.5초 후에는 'obj2'가, 실행 시점으로부터 2초 후에는 'obj3'이 출력된다.
+- 다양한 상황에서 원하는 객체를 바라보는 콜백 함수를 만들 수 있는 방법이다.
