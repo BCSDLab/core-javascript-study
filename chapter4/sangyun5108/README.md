@@ -187,3 +187,168 @@ addEventListener를 호출한 주체인 HTML을 가리키게 된다.
 - callback3는 obj1의 func를 실행하면서 this를 obj3가 되도록 지정해 콜백으로 사용했다.
 - 실행 시점으로 부터 1.5초 후에는 'obj2'가, 실행 시점으로부터 2초 후에는 'obj3'이 출력된다.
 - 다양한 상황에서 원하는 객체를 바라보는 콜백 함수를 만들 수 있는 방법이다.
+
+**bind메서드 활용
+
+```javascript
+  var obj1 = {
+    name : 'obj1',
+    func : function(){
+      console.log(this.name);
+    }
+  };
+  
+  setTimeout(obj1.func.bind(obj1),1000);
+  
+  var obj2 = {name:'obj2'};
+  setTimeout(obj1.func.bind(obj2),1500); 
+```
+# 05. 콜백 지옥과 비동기 제어
+
+- 콜백 지옥 : 콜백 함수를 익명 함수로 전달하는 과정이 반복되어 코드의 들여쓰기 수준이 감당하기 힘들 정도로 깊어지는 현상
+- 비동기 : 동기의 반댓말, 현재 실행 중인 코드의 완료 여부와 무관하게 즉시 다음 코드로 넘어간다.(별도의 요청, 실행 대기, 보류)
+- 동기 : 현재 실행 중인 코드가 완료된 후에야 다음 코드를 실행하는 방식이다.
+
+**콜백 지옥 예시**
+
+```javascript
+  setTimeout(function(name){
+    var coffeeList = name;
+    console.log(coffeeList);
+    
+    setTimeout(function(name){
+      coffeeList += ', ' + name;
+      console.log(coffeeList);
+    
+      setTimeout(function(name){
+        coffeeList += ', ' + name;
+        console.log(coffeeList);
+        
+          setTimeout(function(name){
+            coffeeList += ', ' + name;
+            console.log(coffeeList);
+          },500,'카페라떼'};
+        },500,'카페모카'};
+      },500,'아메리카노'};
+    },500,'에스프레소'};
+```
+
+
+**콜백 지옥 해결 - 기명함수로 변환
+
+```javascript
+  var coffeeList = '';
+  
+  var addEspresso = function(name){
+    coffeeList = name;
+    console.log(coffeeList);
+    setTimeout(addAmericano,500,'아메리카노');
+  }
+  
+  var addAmericano = function(name){
+    coffeeList = name;
+    console.log(coffeeList);
+    setTimeout(addAmericano,500,'카페모카');
+  }
+  
+  var addMocha = function(name){
+    coffeeList = name;
+    console.log(coffeeList);
+    setTimeout(addLatte,500,'카페라떼');
+  }
+  
+  var addLatte = function(name){
+    coffeeList = name;
+    console.log(coffeeList);
+    setTimeout(addEspresso,500,'에스프레소');
+  }
+```
+
+**비동기 작업의 동기적 표현
+
+```javascript
+  new Promise(function(resolve){
+    setTimeout(function(){
+      var name = '에스프레소';
+      console.log(name);
+      resolve(name);
+    },500);
+  }).then(function(preName){
+      return new Promise(function(resolve) {
+         setTimeout(function(){
+            var name = prevName + ', 아메리카노';
+            console.log(name);
+            resolve(name);
+         },500);
+      });
+ }).then(function(prevName){
+  return new Promise(function(resolve){
+      setTimeout(function(){
+        var name = prevName + ', 카페모카';
+        console.log(name);
+        resolve(name);
+      },500);
+   });
+ }).then(function(prevName){
+    return new Promise(function(resolve){
+      setTimeout(function(){
+        var name = prevName + ', 카페라떼';
+        console.log(name);
+        resolve(name);
+      },500);
+    });
+ });
+```
+
+- ES6 Promise를 이용한 방식이다.
+- new 연산자와 함께 호출한 Promise의 인자로 넘겨주는 콜백 함수는 호출할 때 바로 실행된다.
+- 내부에 **resolve 또는 reject 함수를 호출하는 구문이 있을 경우 둘 중 하나가 실행되기 전까지 다음(then)또는 오류 구문(catch)로 넘어가지 않는다.**
+- 따라서 비동기 작업이 완료될 때 비로소 resolve 또는 reject를 호출하는 방법으로 비동기 작업의 동기적 표현이 가능하다.  
+
+**비동기 작업의 동기적 표현2
+
+```javascript
+  var addCoffee = function(name){
+    return function(prevName){
+      return new Promise(function(resolve){
+        setTimeout(function(){
+          var newName = prevName ? (prevName + ',' + name) : name;
+          console.log(newName);
+          resolve(newName);
+        },500);
+      });
+    };
+  };
+  
+  addCoffee('에스프레소')()
+      .then(addCoffee('아메리카노'))
+      .then(addCoffee('카페모카'))
+      .then(addCoffee('카페라떼'));
+```
+- 반복적인 내용을 함수화 해서 더욱 짧게 표현한 것
+
+
+**비동기 작업의 동기적 표현 - Generator
+```javascript
+  var addCoffee = function(prevName,name){
+    setTimeout(function(){
+      coffeeMaker.next(prevName?prevName+', '+name:name);
+    },500);
+  };
+  
+  var coffeeGenerator = function* (){
+    var espresso = yield addCoffee('','에스프레소');
+    console.log(espresso);
+    var americano = yield addCoffee(espresso,'아메리카노');
+  }
+```
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
