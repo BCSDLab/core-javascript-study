@@ -340,8 +340,23 @@ addEventListener를 호출한 주체인 HTML을 가리키게 된다.
     var espresso = yield addCoffee('','에스프레소');
     console.log(espresso);
     var americano = yield addCoffee(espresso,'아메리카노');
-  }
+    console.log(americano);
+    var mocha = yield addCoffee(americano,'카페모카');
+    console.log(mocha);
+    var latte = yield addCoffee(mocha,'카페라떼');
+    console.log(latte);
+  };
+  
+  var coffeeMaker = coffeeGenerator();
+  coffeeMaker.next();
 ```
+
+- ES6의 Generator를 이용한다.
+- '*'가 붙은 함수가 Generator 함수이다.
+- Generator 함수 실행시 Iterator가 반환되고, Iterator는 next라는 메서드를 갖고 있다.
+- next 메서드 호출시 Generator 함수 내부에서 가장 먼저 등장하는 yield에서 함수의 실행을 멈춘다.
+- 다시 next 메서드를 호출하면, 앞서 멈췄던 부분부터 시작해서 그 다음 등장하는 yield 함수의 실행을 멈춘다.
+- 
   
   
   
