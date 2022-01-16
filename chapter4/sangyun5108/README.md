@@ -264,7 +264,7 @@ addEventListener를 호출한 주체인 HTML을 가리키게 된다.
   }
 ```
 
-**비동기 작업의 동기적 표현
+**비동기 작업의 동기적 표현**
 
 ```javascript
   new Promise(function(resolve){
@@ -305,7 +305,7 @@ addEventListener를 호출한 주체인 HTML을 가리키게 된다.
 - 내부에 **resolve 또는 reject 함수를 호출하는 구문이 있을 경우 둘 중 하나가 실행되기 전까지 다음(then)또는 오류 구문(catch)로 넘어가지 않는다.**
 - 따라서 비동기 작업이 완료될 때 비로소 resolve 또는 reject를 호출하는 방법으로 비동기 작업의 동기적 표현이 가능하다.  
 
-**비동기 작업의 동기적 표현2
+**비동기 작업의 동기적 표현2**
 
 ```javascript
   var addCoffee = function(name){
@@ -328,7 +328,7 @@ addEventListener를 호출한 주체인 HTML을 가리키게 된다.
 - 반복적인 내용을 함수화 해서 더욱 짧게 표현한 것
 
 
-**비동기 작업의 동기적 표현 - Generator
+**비동기 작업의 동기적 표현 - Generator**
 ```javascript
   var addCoffee = function(prevName,name){
     setTimeout(function(){
@@ -356,14 +356,46 @@ addEventListener를 호출한 주체인 HTML을 가리키게 된다.
 - Generator 함수 실행시 Iterator가 반환되고, Iterator는 next라는 메서드를 갖고 있다.
 - next 메서드 호출시 Generator 함수 내부에서 가장 먼저 등장하는 yield에서 함수의 실행을 멈춘다.
 - 다시 next 메서드를 호출하면, 앞서 멈췄던 부분부터 시작해서 그 다음 등장하는 yield 함수의 실행을 멈춘다.
-- 
+- 비동기 작업이 완료되는 시점마다 next 메서드를 호출해준다면 Generaotr 함수 내부의 소스가 위에서부터 아래로 순차적으로 진행된다.
+
+```javascript
+  var addCoffee = function(name){
+    return new Promise(function(resolve){
+      setTimeout(function(){
+        resolove(name);
+      },500);
+    });
+  };
   
+  var coffeeMaker = async function(){
+    var coffeeList = '';
+    var _addCoffee = async function(name){
+      coffeeList += (coffeeList?',':'') + await addCoffee(name);
+    };
+    
+    await _addCoffee('에스프레소');
+    console.log(coffeeList);
+    await _addCoffee('아메리카노');
+    console.log(coffeeList);
+    await _addCoffee('카페모카');
+    console.log(coffeeList);
+    await _addCoffee('카페라떼');
+    console.log(coffeeList);
+  };
   
-  
-  
-  
-  
-  
-  
-  
-  
+  coffeeMaker();
+```
+- ES2017에서는 가독성이 뛰어나면서 작성법도 간단한 새로운 기능인 async/await가 추가되었다.
+- 비동기 작업을 수행하고자 하는 함수 앞에 async를 표기하고, 함수 내부에서 실질적인 비동기 작업이 필요한 위치마다 await을 표기해준다.
+- 위와 같이 표기하면 뒤의 내용을 Promise로 자동 전환해주고, 해당 내용이 resolve된 이후에 다음으로 진행된다.
+- Promise의 then과 흡사한 효과를 얻을 수 있다.
+
+# 06.정리
+
+- 콜백 함수는 다른 코드에 인자로 넘겨줌으로써 그 제어권도 함께 위임한 함수이다.
+- 제어권을 넘겨받은 코드는 다음과 같은 제어권을 가진다.
+1. 콜백 함수를 호출하는 시점을 스스로 판단해 실행한다.
+2. 콜백 함수를 호출할때 인자로 넘겨줄 값들 및 그 순서가 정해져 있다. 이 순서를 따르지 않고 코드를 작성하면 엉뚱한 결과를 얻게 된다.
+3. 콜백 함수의 this가 무엇을 바라보도록 할지가 정해져 있는 경우도 있다. 정하지 않은 경우에는 전역객체를 바라본다.사용자가 임의로 this를 바꾸고 싶은 경우에는 bind메서드를 활용하면 된다.
+4. 어떤 함수에 인자로 메서드를 전달하더라도 이는 결구 함수로서 실행된다.
+5. 비동기 제어를 위해 콜백 함수를 사용하다 보면 콜백 지옥에 빠지게 된다 -> Promise,Generator,async/await을 이용하면 콜백 지옥에서 벗어날 수 있다.
