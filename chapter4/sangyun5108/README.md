@@ -234,7 +234,7 @@ addEventListener를 호출한 주체인 HTML을 가리키게 된다.
 ```
 
 
-**콜백 지옥 해결 - 기명함수로 변환
+**콜백 지옥 해결 - 기명함수로 변환**
 
 ```javascript
   var coffeeList = '';
