@@ -248,7 +248,7 @@ addEventListener를 호출한 주체인 HTML을 가리키게 된다.
   var addAmericano = function(name){
     coffeeList = name;
     console.log(coffeeList);
-    setTimeout(addAmericano,500,'카페모카');
+    setTimeout(addMocha,500,'카페모카');
   }
   
   var addMocha = function(name){
