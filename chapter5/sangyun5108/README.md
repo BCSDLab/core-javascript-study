@@ -178,7 +178,7 @@ return 없어도 클로저가 발생하는 경우
 - 콜백 함수 (B) : 클릭 이벤트에 의해 (B)가 실행될때는 (B)의 outerEnvironmentReference가 (A)의 LexicalEnvironment를 참조한다.
 - 참조 예정인 변수 fruit는 (A)가 종료된 후에도 GC 대상에서 제거되어 계속 참조가 가능하다.
 
-```javascipt
+```javascript
   var alert Fruit = function(fruit){
     alert('your choice is'+fruit);
   };
