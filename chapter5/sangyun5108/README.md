@@ -70,8 +70,127 @@
 - outer-EnvironmnetReference에는 inner 함수가 선언된 위치의 LexicalEnvironment가 참조 복사된다.(outer 함수의 LexicalEnvironment가 담긴다.)
 - 이상한 점 : inner 함수 실행 시점에 outer함수는 이미 실행이 종료된 상태인데 outer 함수의 LexicalEnvironment에 어떻게 접근할 수 있을까?
 - 이유 : 가비지 컬렉터는 어떤 값을 참조하는 변수가 하나라도 있는 경우, 그 값은 수집 대상에 포함되지 않는다.
+- 어떤 함수에서 선언한 변수를 참조하는 내부함수에서만 발생하는 현상 : 외부 함수 LexicalEnvironment가 가비지 컬렉팅 되지 않는 현상
 
+결론 : 클로저란 어떤 함수 A에서 선안한 변수 a를 참조하는 내부함수 B를 외부로 전달할 경우 **A의 실행 컨텍스트가 종료된 이후에도 변수 a가 사라지지 않는 현상**
 
+-외부에 전달이 꼭 return만 의미하지는 않는다.
 
+return 없어도 클로저가 발생하는 경우
+```javascript
+//(1) setInterval/setTimeout
+  (function(){
+    var a = 0;
+    var intervalid = null;
+    var inner = function(){
+      if(++a>=10){
+        clearInterval(intervalid);
+      }
+      console.log(a);
+    };
+    intervaalid = setInterval(inner,1000);
+  })();
+```
+```javascript
+//(2) eventListener
+  (function(){
+    var count = 0;
+    var button = document.createElement('button');
+    button.innerText = 'click';
+    button.addEventListener('click',function(){
+      console.log(++count,'times clicked');
+    });
+    document.body.appendChild(button);
+  })();
+```
+- (1) : window메서드에 전달할 콜백 함수 내부에서 지역변수를 참조한다.
+- (2) : 별도의 외부객체인 DOM의 메서드에 등록할 handler 함수  내부에서 지역변수를 참조한다.
+- (1),(2) 모두 지역변수를 참조하는 내부함수를 외부에 전달했으므로 클로저이다.
 
+# 02. 클로저와 메모리 관리
 
+```javascript
+  //(1) return에 의한 클로저의 메모리 해제
+  var outer = (function(){
+    var a = 1;
+    var inner = function(){
+      return ++a;
+    };
+    return inner;
+  })();
+  
+  console.log(outer());
+  console.log(outer());
+  outer = null; // outer 식별자의 inner 함수 참조를 끊는다.
+```
+```javascript
+  (function(){
+    var a = 0;
+    var intervalid = null;
+    var inner = function(){
+      if(++a>=10){
+        clearInterval(intervalid);
+        inner = null; // inner 식별자의 함수 참조를 끊는다.
+      }
+      console.log(a);
+    }
+    intervalid = setInterval(inner,1000);
+  })();
+```
+```javascript
+  (function(){
+    var count = 0;
+    var button = document.createElement('button');
+    button.innerText = 'click';
+    
+    var clickHandler = function(){
+      console.log(++count,'times clicked');
+      if(count>=10){
+        button.removeEventListener('click',clickHandler);
+        clickHandler = null; // clickHandler 식별자의 함수 참조를 끊음
+      }
+    }
+    
+    button.addEventListener('click',clickHandler);
+    document.body.appendChild(button);
+  })();
+```
+
+# 03. 클로저 활용 사례
+
+- 이벤트 리스너에 관한 예시
+```javascript
+  var fruits = ['apple','banana','peach'];
+  var $ul = document.createElement('ul');
+  
+  fruits.forEach(function(fruit){ //(A)
+    var $li = document.createElement('li');
+    $li.innerText = fruit;
+    $li.addEventListener('click',function(){ //(B)
+      alert('your choice is'+fruit);
+    });
+    $ul.appendChild($li);
+  });
+  document.body.appendChild($ul);
+```
+- 콜백 함수(B) : fruit이라는 외부 변수를 참조하고 있으므로 클로저가 존재한다.
+- 콜백 함수 (A) : fruits의 개수만큼 실행되고, 그때마다 새로운 실행 컨텍스트가 활성화된다.
+- 콜백 함수 (B) : 클릭 이벤트에 의해 (B)가 실행될때는 (B)의 outerEnvironmentReference가 (A)의 LexicalEnvironment를 참조한다.
+- 참조 예정인 변수 fruit는 (A)가 종료된 후에도 GC 대상에서 제거되어 계속 참조가 가능하다.
+
+```javascipt
+  var alert Fruit = function(fruit){
+    alert('your choice is'+fruit);
+  };
+  
+  fruits.forEach(function(fruit){
+    var $li = document.createElement('li');
+    $li.innerText = fruit;
+    $li.addEventListener('click',alertFruit);
+    $ul.appendChild($li);
+  });
+  
+  document.body.appendChild($ul);
+  alertFruit(fruits[1]);
+```
+- (B) 함수의 쓰임새가 콜백 함수에 국한되지 않는 경우라면 반복을 줄이기 위해 (B)를 외부로 분리하는 편이 좋다.(fruit를 인자로 받아 출력하는 형태)
