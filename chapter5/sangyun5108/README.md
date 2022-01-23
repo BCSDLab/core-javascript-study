@@ -194,3 +194,124 @@ return 없어도 클로저가 발생하는 경우
   alertFruit(fruits[1]);
 ```
 - (B) 함수의 쓰임새가 콜백 함수에 국한되지 않는 경우라면 반복을 줄이기 위해 (B)를 외부로 분리하는 편이 좋다.(fruit를 인자로 받아 출력하는 형태)
+- 공통 함수로 쓰기위해 콜백 함수를 외부로 꺼내어 alertfruit라는 변수에 담아주었다.
+- 문제점 : 각 li 클릭시, 클릭한 대상의 과일명이 아닌 [object MouseEvent] 값이 출력된다 -> 콜백 함수의 인자에 대한 제어권을 addEventListener가 가진 상태이고, addEventListener는 콜백 함수를 호출할 때 첫번째 인자에 '이벤트 객체'를 주입하기 때문
+- 위와 같은 문제는 **bind 메서드**를 활용해서 해결해 줄 수 있다.
+
+```javascript
+  fruits.forEach(function(fruit){
+    var $li = document.createElement('li');
+    $li.innerText = fruit;
+    $li.addEventListener('click',alertFruit.bind(null,fruit));
+    $ul.appendChild($li);
+  });
+```
+- 이벤트 객체가 인자로 넘어오는 순서가 바뀐다.
+- 함수 내부에서의 this가 원래의 그것과 달라진다.
+- 두개의 달라지는 점 때문에, bind 메서드가 아닌 다른 방식(고차함수)으로 풀어주어야 한다.
+
+```javascript
+  var alertFruitBuilder = function(fruit){
+    return function(){
+      alert('your choice is'+fruit);
+    }
+  };
+  
+  fruits.forEach(function(fruit){
+    var $li = document.createElement('li');
+    $li.innerText = fruit;
+    $li.addEventListener('click',alertFruitBuilder(fruit));
+    $ul.appendChild($li);
+  }
+```
+- alertFruitBuilder : 함수 내부에는 익명 함수를 반환한다.
+- 클릭 이벤트 발생 -> 함수의 실행 컨텍스트가 실행되면서, alertFruitBuilder의 인자로 넘어온 fruit를 outerEnvironmentReference에 의해 참조 : 클로저 존재
+
+### 콜백 함수 내부에서 외부변수를 참조하기 위한 방법 3가지
+- 콜백 함수를 내부함수로 선언해 외부변수를 직접 참조
+- bind 메서드로 값을 직접 넘겨줌
+- 콜백 함수를 고차함수로 변경하여 클로저를 적극적으로 활용
+
+### 접근 권한 제어(정보 은닉)
+
+- 정보 은닉 : 어떤 모듈의 내부 로직에 대해 외부로의 노출을 최소화해서 모듈간의 결합도를 낮추고 유연성을 높이고자 하는 현대 프로그래밍 언어의 중요한 개념 중 하나
+- 접근 권한 종류 : public, private, protected
+- 클로저를 이용한 함수 차원에서 public한 값과 private한 값을 구분하는 것이 가능하다.
+```javascript
+  var outer = function(){
+    var a = 1;
+    var inner = function(){
+      return ++a;
+    };
+    return inner;
+  };
+  
+  var outer2 = outer();
+  console.log(outer2());
+  console.log(outer2());
+```
+- 클로저를 활용하여 외부 스코프에서 함수 내부의 변수들 중 선택적으로 일부의 변수에 대해 접근권을 부여 할 수 있다.(return을 활용)
+- 외부 공간에 노출돼있는 outer라는 변수를 통해 함수 실행은 가능하지만, outer 함수 내부에는 어떠한 개입도 불가능하다.
+- 오직 outer 함수가 return한 정보에만 접근할 수 있다.
+- 외부에 제공하고자 하는 정보들을 모아서 return하고, 내부에서만 사용할 정보들은 return하지 않는 것으로 접근 권한 제어가 가능하다.(return 변수 : 공개멤버, 그렇지 않은 변수 : 비공개 멤버)
+
+### 자동차 게임
+```javascript
+  var car = {
+    fuel : Math.ceil(Math.random()*10+10), // 연료
+    power : Math.ceil(Math.random()*3+2), // 연비
+    moved : 0, // 총 이동거리
+    run : function(){
+      var km = Math.ceil(Math.random()*6);
+      var wasteFuel = km / this.power;
+      if(this.fuel < wasteFuel){
+        console.log('이동불가');
+        return;
+      }
+      this.fuel -= wasteFuel;
+      this.moved += km;
+      console.log(km+'km 이동 (총'+this.moved+'km)');
+    }
+  };
+```
+- car 변수에 객체를 직접 할당한다.
+- fuel,power는 무작위 생성하고, moved라는 프로퍼티에 총 이동거리 부여한다.
+- run 메서드를 실행할 때마다 car 객체의 fuel, moved값이 변하게 한다.
+- car 객체를 사람 수만큼 생성해서 각자의 턴에 run을 실행하면서 게임을 즐긴다.
+
+```javascript
+  car.fuel = 10000;
+  car.power = 100;
+  car.moved = 1000;
+```
+- 위와 같은 방식으로 마음껏 값을 바꿔버리게 되면, 일방적인 게임이 된다.
+- 값을 바꾸지 못하도록 방어할 필요가 있다. 클로저를 활용해서 방어가 가능하다.
+```javascript
+  var createCar  function(){
+    var fuel = Math.ceil(Math.random()*10+10);
+    var power = Math.ceil(Math.random()*3+2);
+    var moved = 0;
+    return {
+      get moved(){
+        return moved;
+      },
+      run : function(){
+        var km = Math.ceil(Math.random()*6);
+        var wasteFuel = km / power;
+        if(fuel < wasteFul){
+          console.log('이동불가');
+          return;
+        }
+        fuel -= wasteFuel;
+        moved += km;
+        console.log(km+'km 이동 (총 ' + moved + 'km). 남은 연료: '+fuel);
+      }
+    };
+  };
+  
+  var car = createCar();
+```
+- createCar라는 함수를 실행함으로써 객체를 생성하게 했다.
+- fuel,power 변수는 비공개 멤버로 지정해 외부에서 접근을 제한했다.
+- moved 변수는 getter 만을 부여함으로써 읽기 전용 속성을 부여했다.
+- 오직 run 메서드를 실행하는 것과 현재 moved 값을 확인하는 두 가지 동작 할 수 있다.
