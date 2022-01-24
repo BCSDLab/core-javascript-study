@@ -287,7 +287,7 @@ return 없어도 클로저가 발생하는 경우
 - 위와 같은 방식으로 마음껏 값을 바꿔버리게 되면, 일방적인 게임이 된다.
 - 값을 바꾸지 못하도록 방어할 필요가 있다. 클로저를 활용해서 방어가 가능하다.
 ```javascript
-  var createCar  function(){
+  var createCar = function(){
     var fuel = Math.ceil(Math.random()*10+10);
     var power = Math.ceil(Math.random()*3+2);
     var moved = 0;
