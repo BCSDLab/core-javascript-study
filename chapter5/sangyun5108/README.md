@@ -315,3 +315,146 @@ return 없어도 클로저가 발생하는 경우
 - fuel,power 변수는 비공개 멤버로 지정해 외부에서 접근을 제한했다.
 - moved 변수는 getter 만을 부여함으로써 읽기 전용 속성을 부여했다.
 - 오직 run 메서드를 실행하는 것과 현재 moved 값을 확인하는 두 가지 동작 할 수 있다.
+- 문제점 : run 메서드를 다른 내용으로 덮어씌우는 어뷰징은 여전히 가능한 상태이다.
+
+```javascript
+  var createCar = function(){
+    var publicMembers = {
+      ...
+    };
+    
+    object.freeze(publicMembers);
+    return publicMembers;
+  };
+```
+- 객체를 return 하기전에 freeze를 사용해서 미리 변경할 수 없게끔 조치를 취한다.
+
+### 클로저를 활용해서 접근권한을 제어하는 방법
+- 함수에서 지역변수 및 내부함수 등을 생성한다.
+- 외부에 접근권한을 주고자 하는 대상들로 구성된 참조형 데이터(대상이 여러개일 경우, 객체 또는 배열, 하나인 경우 함수)를 return 해준다. -> return한 변수 : 공개 멤버  / 그렇지 않은 변수 : 비공개 멤버
+
+### 부분 적용 함수
+- 부분 적용 함수 : n개의 인자를 받는 함수에 미리 m개의 인자만 넘겨 기억시키고, 나중에 (n-m)개의 인자를 넘기면 비로소 원래 함수의 실행 결과를 얻을 수 있게끔 하는 함수
+```javascript
+  var add = function(){
+    var result = 0;
+    for(var i = 0; i < arguments.length; i++){
+      result += arguments[i];
+    }
+    return result;
+  };
+  var addPartial = add.bind(null,1,2,3,4,5);
+  console.log(addPartial(6,7,8,9,10)); // 55
+```
+- addPartial 함수는 인자 5개를 미리 적용하고, 추후 추가적으로 인자들을 전달하면, 모든 인자를 모아서 원래의 함수가 실행되는 부분에 적용시킨다.
+- add 함수는 this를 사용하지 않으므로, bind 메서드 만으로도 문제 없이 구현했다.
+- 문제 : this의 값을 변경할 수 밖에 없기 때문에 메서드에서는 사용할 수 없다.
+
+```javascript
+  var partial = function(){
+    var originalPartialArgs = arguments;
+    var func = originalPartialArgs[0];
+    if(typeof func !== 'function'){
+      throw new Error('첫 번째 인자가 함수가 아닙니다!');
+    }
+    
+    return function(){
+      var partialArgs = Array.prototype.slice.call(originalPartialArgs,1);
+      var restArgs = Array.prototype.slice.call(arguments);
+      return func.apply(this,partialArgs.concat(restArgs));
+    };
+  };
+  
+  var add = function(){
+    var result = 0;
+    for(var i = 0; i<arguments.length;i++){
+      result+=arguments[i];
+    }
+    return result;
+  };
+  
+  var addPartial = partial(add,1,2,3,4,5);
+  console.log(addPartial(6,7,8,9,10));
+  
+  var dog = {
+    name : '강아지',
+    greet : partial(function(prefix,suffix){
+      return prefix + this.name + suffix;
+    },'왈왈',')
+  };
+  
+  dog.greet('입니다'); // 왈왈, 강아지입니다.
+```
+- dog 객체의 greet에서 첫 번째 인자에는 원본 함수, 두 번재 인자 이후부터는 미리 적용할 인자들을 전달한다.
+- partial에서 반환할 함수에는 나머지 인자들을 받아 이들을 한데 모아(concat)원본 함수를 호출(apply)한다.
+- 실행 시점의 this를 그대로 반영함으로써 this에는 아무런 영향을 주지 않게 되었다.
+- 문제 : 부분 적용 함수에 넘길 인자를 반드시 앞에서부터 차례로 전달할 수 밖에 없다는 점
+
+```javascript
+  Object.defineProperty(window,'_',{
+    value : 'EMPTY_SPACE',
+    writable : false,
+    configuralble : false,
+    enumerable : false
+  });
+  
+  var partial2 = function(){
+    var originalPartialArgs = arguments;
+    var func = originalPartialArgs[0];
+    if(typeof func !== 'function'){
+      throw new Error('첫 번째 인자가 함수가 아닙니다.');
+    }
+    
+    return function(){
+      var partialArgs = Array.prototype.slice.call(originalPartialArgs,1);
+      var restArgs = Array.prototype.slice.call(arguments);
+      for (var i = 0; i < partialArgs.length; i++){ // 변화한 부분
+        if(partialArgs[i] === _){ // 변화한 부분
+          partialArgs[i] = restArgs.shift(); // 변화한 부분
+        }
+      }
+      
+      return func.apply(this,partialArgs.concat(resArgs));
+    };
+  };
+  
+  var add = function(){
+    var result = 0;
+    for(var i = 0; i < arguments.length ; i++){
+      result += arguments[i];
+    }
+    return result;
+  };
+  
+  var addPartial = partial2(add,1,2,_,4,5,_,_,8,9);
+  console.log(addPartial(3,6,7,10));
+  
+  var dog = {
+    name : '강아지',
+    greet : partial2(function(prefix,suffix){
+      return prefix + this.name + suffix;
+    },'왈왈,')
+  };
+  
+  dog.greet('배고파요!');
+```
+- 처음에 넘겨준 인자들 중 _로 비워놓은 공간마다 나중에 넘어온 인자들이 차례대로 끼워놓도록 구현
+
+### 결론
+- 위 두 예제의 부분 적용 함수는 모두 클로저를 핵심 기법으로 사용해 주었다.
+- 미리 일부 인자를 넘겨두어 기억하게끔 만들어 준뒤, 추후에 필요한 시점에 기억했던 인자들까지 함께 실행하게 해준다. -> 개념 : 클로저의 정의에 부합
+
+### 실무에서 사용하는 디바운스 함수
+- 디바운스 : 짧은 시간 동안 동일한 이벤트가 많이 발생할 경우, 이를 전부 처리하지 않고, 처음 또는 마지막에 발생한 이벤트에 대해 한 번만 처리한다.(성능 최적화)
+- scroll, whell, mousemove, resize에 적용하면 좋다.
+```javascript
+  var debounce = function(eventName,func,wait){
+    var timeoutId = null;
+    return funciton(event){
+      var self = this;
+      console.log(eventName,'event 발생'):
+      clearTimeout(timeoutId);
+      timeoutId = setTimeoutId(func.bind(self,event),wait);
+    };
+  };
+```
