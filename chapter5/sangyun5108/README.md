@@ -444,17 +444,8 @@ return 없어도 클로저가 발생하는 경우
 - 위 두 예제의 부분 적용 함수는 모두 클로저를 핵심 기법으로 사용해 주었다.
 - 미리 일부 인자를 넘겨두어 기억하게끔 만들어 준뒤, 추후에 필요한 시점에 기억했던 인자들까지 함께 실행하게 해준다. -> 개념 : 클로저의 정의에 부합
 
-### 실무에서 사용하는 디바운스 함수
-- 디바운스 : 짧은 시간 동안 동일한 이벤트가 많이 발생할 경우, 이를 전부 처리하지 않고, 처음 또는 마지막에 발생한 이벤트에 대해 한 번만 처리한다.(성능 최적화)
-- scroll, whell, mousemove, resize에 적용하면 좋다.
-```javascript
-  var debounce = function(eventName,func,wait){
-    var timeoutId = null;
-    return funciton(event){
-      var self = this;
-      console.log(eventName,'event 발생'):
-      clearTimeout(timeoutId);
-      timeoutId = setTimeoutId(func.bind(self,event),wait);
-    };
-  };
-```
+# 정리 
+
+- 클로저 : 어떤 함수에서 선안한 변수를 참조하는 내부함수를 외부로 전달할 경우, 함수의 실행 컨텍스트가 종료된 후에도 해당 변수가 사라지지 않는 현상이다.
+- 내부 함수를 외부로 전달하는 방법 : 함수를 return하는 경우, 콜백으로 전달하는 경우
+- 클로저는 메모리를 계속 차지하는 개념이므로 사용하지 않게 된 클로저에 대해서는 메모리르 차지하지 않도록 관리해줄 필요가 있다.
