@@ -35,13 +35,13 @@ Person.prototype
 - suzi.__proto__.getName();에서 getName 함수 내부에서의 this는 suzi가 아닌, suzi.__proto__각 객체가 된다.
 - 따라서, 객체 내부에는 name 프로퍼티가 없으므로, 즉, 찾고자 하는 식별자가 정의돼 있지 않기 때문에 undefined를 반환한다.
 
-**__proto__객체에 name프로퍼티 할당**
+**__proto__객체에 name프로퍼티 할당
 ```javascript
   var suzi = new Person('Suzi');
   suzi.__proto__.name = 'SUZI__proto__';
   suzi.__proto__.getName(); // SUZI__proto__
 ```
-***this를 instance로 하기 위한 __proto__생략
+**this를 instance로 하기 위한 __proto__생략
 ```javascript
   var suzi = new Person('Suzi',28);
   suzi.getName();
